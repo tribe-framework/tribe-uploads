@@ -1,0 +1,9 @@
+{
+    "name": "tribe/uploads",
+    "description": "Offers uploading functions for Tribe (v3) /uploads directory",
+    "autoload": {
+        "psr-4": {
+            "Tribe\\": "src/"
+        }
+    }
+}
