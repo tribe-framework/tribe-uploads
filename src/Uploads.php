@@ -185,7 +185,7 @@ class Uploads {
 				$handle->process($uploader_path['upload_dir'].'/'.$version);
 
 				$file[$version]['name'] = $handle->file_dst_name_body;
-				$file[$version]['url'] = $uploader_path['upload_url'].'/'.$handle->file_dst_name;
+				$file[$version]['url'] = $uploader_path['upload_url'].'/'.$version.'/'.$handle->file_dst_name;
 			}
 
 			if ($handle->processed) {
