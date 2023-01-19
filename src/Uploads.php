@@ -127,4 +127,73 @@ class Uploads {
 			return false;
 		}
 	}
+
+	public function handleUpload(array $files_server_arr) {
+		$handle = new \Verot\Upload\Upload($files_server_arr['file']);
+
+		//Image size variants
+		$image_versions = [
+			'xl' => array(
+				'max_width' => 2100,
+				'max_height' => 2100,
+			),
+			'lg' => array(
+				'max_width' => 1400,
+				'max_height' => 1400,
+			),
+			'md' => array(
+				'max_width' => 700,
+				'max_height' => 700,
+			),
+			'sm' => array(
+				'max_width' => 350,
+				'max_height' => 350,
+			),
+			'xs' => array(
+				'max_width' => 100,
+				'max_height' => 100,
+			),
+		];
+
+		if ($handle->uploaded) {
+		  
+		  $file = array();
+		  $uploader_path = $this->getUploaderPath();
+		  $file_extension = pathinfo($files_server_arr['file']['name'], PATHINFO_EXTENSION);
+		  $file['name'] = pathinfo($files_server_arr['file']['name'], PATHINFO_FILENAME).'_'.uniqid();
+
+		  if (!in_array(strtolower($file_extension), explode(',', $_ENV['ALLOWED_FILE_EXTENSIONS_IN_UPLOADS_FOLDER']))) {
+		  	return array('status'=>'error', 'error_message'=>'File format not supported by server.');
+		  }
+
+		  else {
+
+			$handle->file_new_name_body = $file['name'];
+			$handle->process($uploader_path['upload_dir']);
+
+			$file['name'] = $handle->file_dst_name_body;
+			$file['url'] = $uploader_path['upload_url'].'/'.$handle->file_dst_name;
+
+			foreach ($image_versions as $version => $constraints) {
+				$handle->file_new_name_body = $file['name'];
+
+				$handle->image_resize         = true;
+				$handle->image_x              = $constraints['max_width'];
+				$handle->image_y              = $constraints['max_height'];
+				$handle->image_ratio          = true;
+
+				$handle->process($uploader_path['upload_dir'].'/'.$version);
+
+				$file[$version]['name'] = $handle->file_dst_name_body;
+				$file[$version]['url'] = $uploader_path['upload_url'].'/'.$handle->file_dst_name;
+			}
+
+			if ($handle->processed) {
+				return array('status'=>'success', 'file'=>$file);
+				$handle->clean();
+			} else
+				return array('status'=>'error', 'error_message'=>$handle->error);
+		  }
+		}
+	}
 }
