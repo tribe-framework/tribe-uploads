@@ -1,8 +1,9 @@
 {
     "name": "tribe/uploads",
     "description": "Offers uploading functions for Tribe (v3) /uploads directory",
+    "license": "GPL-3.0-or-later",
     "require": {
-       "verot/class.upload.php": "*"
+       "verot/class.upload.php": "^2.1.3"
     },
     "autoload": {
         "psr-4": {
