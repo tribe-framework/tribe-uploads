@@ -128,7 +128,14 @@ class Uploads {
 		}
 	}
 
-	public function handleUpload(array $files_server_arr) {
+	public function handleUpload(array $files_server_arr, array $post_server_arr = [], array $get_server_arr = []) {
+
+		if ($post_server_arr['url'] ?? false)
+			return array('status'=>'success', 'success'=>1, 'error'=>0, 'file'=>array('url'=>$post_server_arr['url']));
+
+		else if ($files_server_arr['image'] ?? false)
+			$files_server_arr['file'] = $files_server_arr['image'];
+
 		$handle = new \Verot\Upload\Upload($files_server_arr['file']);
 
 		//Image size variants
@@ -189,10 +196,11 @@ class Uploads {
 			}
 
 			if ($handle->processed) {
-				return array('status'=>'success', 'file'=>$file);
+				return array('status'=>'success', 'success'=>1, 'error'=>0, 'file'=>$file);
 				$handle->clean();
-			} else
-				return array('status'=>'error', 'error_message'=>$handle->error);
+			} else {
+				return array('status'=>'error', 'success'=>0, 'error'=>1, 'error_message'=>$handle->error);
+			}
 		  }
 		}
 	}
