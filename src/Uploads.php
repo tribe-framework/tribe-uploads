@@ -181,18 +181,20 @@ class Uploads {
 			$file['name'] = $handle->file_dst_name_body;
 			$file['url'] = $uploader_path['upload_url'].'/'.$handle->file_dst_name;
 
-			foreach ($image_versions as $version => $constraints) {
-				$handle->file_new_name_body = $file['name'];
+			if (in_array(strtolower($file_extension), ['jpg', 'jpeg', 'png', 'webp'])) {
+				foreach ($image_versions as $version => $constraints) {
+					$handle->file_new_name_body = $file['name'];
 
-				$handle->image_resize         = true;
-				$handle->image_x              = $constraints['max_width'];
-				$handle->image_y              = $constraints['max_height'];
-				$handle->image_ratio          = true;
+					$handle->image_resize         = true;
+					$handle->image_x              = $constraints['max_width'];
+					$handle->image_y              = $constraints['max_height'];
+					$handle->image_ratio          = true;
 
-				$handle->process($uploader_path['upload_dir'].'/'.$version);
+					$handle->process($uploader_path['upload_dir'].'/'.$version);
 
-				$file[$version]['name'] = $handle->file_dst_name_body;
-				$file[$version]['url'] = $uploader_path['upload_url'].'/'.$version.'/'.$handle->file_dst_name;
+					$file[$version]['name'] = $handle->file_dst_name_body;
+					$file[$version]['url'] = $uploader_path['upload_url'].'/'.$version.'/'.$handle->file_dst_name;
+				}
 			}
 
 			if ($handle->processed) {
