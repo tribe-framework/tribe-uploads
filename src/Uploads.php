@@ -1,6 +1,7 @@
 <?php
 namespace Tribe;
 
+
 class Uploads {
 
 	public function getUploadDirPath()
@@ -18,6 +19,11 @@ class Uploads {
 		$folder_path = 'uploads/' . date('Y') . '/' . date('m-F') . '/' . date('d-D');
 		if (!is_dir(TRIBE_ROOT . '/' . $folder_path)) {
 			mkdir(TRIBE_ROOT . '/' . $folder_path, 0755, true);
+			mkdir(TRIBE_ROOT . '/' . $folder_path . '/xs', 0755, true);
+			mkdir(TRIBE_ROOT . '/' . $folder_path . '/sm', 0755, true);
+			mkdir(TRIBE_ROOT . '/' . $folder_path . '/md', 0755, true);
+			mkdir(TRIBE_ROOT . '/' . $folder_path . '/lg', 0755, true);
+			mkdir(TRIBE_ROOT . '/' . $folder_path . '/xl', 0755, true);
 		}
 
 		return array('upload_dir' => TRIBE_ROOT . '/' . $folder_path, 'upload_url' => BASE_URL . '/' . $folder_path);
@@ -162,6 +168,15 @@ class Uploads {
 			),
 		];
 
+
+		//Video size variants
+		$video_versions = [
+			'md' => array(
+				'max_width' => 540,
+				'max_height' => 540,
+			),
+		];
+
 		if ($handle->uploaded) {
 		  
 		  $file = array();
@@ -180,6 +195,7 @@ class Uploads {
 
 			$file['name'] = $handle->file_dst_name_body;
 			$file['url'] = $uploader_path['upload_url'].'/'.$handle->file_dst_name;
+			$file['mime'] = mime_content_type($uploader_path['upload_dir'].'/'.$handle->file_dst_name);
 
 			if (in_array(strtolower($file_extension), ['jpg', 'jpeg', 'png', 'webp'])) {
 				foreach ($image_versions as $version => $constraints) {
@@ -195,6 +211,44 @@ class Uploads {
 					$file[$version]['name'] = $handle->file_dst_name_body;
 					$file[$version]['url'] = $uploader_path['upload_url'].'/'.$version.'/'.$handle->file_dst_name;
 				}
+			}
+
+			else if (in_array(strtolower($file_extension), ['mp4', 'mov', 'webm'])) {
+
+				$file['duration'] = intval(exec('ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 '.$uploader_path['upload_dir'].'/'.$handle->file_dst_name));
+				$ratio = array_map("intval", explode('x', exec('ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 '.$uploader_path['upload_dir'].'/'.$handle->file_dst_name)));
+				$file['ratio'] = $ratio[0]/$ratio[1];
+
+				if ($file['duration'] <= ($_ENV['ALLOWED_MAX_VIDEO_DURATION_FOR_CONVERSION'] ?? 30)) {
+
+					foreach ($video_versions as $version => $constraints) {
+						$ffmpeg = \FFMpeg\FFMpeg::create([
+							'ffmpeg.binaries' => exec('which ffmpeg'),
+							'ffprobe.binaries' => exec('which ffprobe'),
+						]);
+						$video = $ffmpeg->open($uploader_path['upload_dir'].'/'.$handle->file_dst_name);
+
+						if ($file['ratio']>=1) {
+							$video
+						    ->filters()
+						    ->resize(new \FFMpeg\Coordinate\Dimension($constraints['max_width'], ceil($file['ratio']*$constraints['max_width'])), \FFMpeg\Filters\Video\ResizeFilter::RESIZEMODE_INSET, false);
+						} else {
+							$video
+						    ->filters()
+						    ->resize(new \FFMpeg\Coordinate\Dimension(ceil($file['ratio']*$constraints['max_height']), $constraints['max_height']), \FFMpeg\Filters\Video\ResizeFilter::RESIZEMODE_INSET, false);
+						}
+
+					    $video
+		    				->save(new \FFMpeg\Format\Video\X264(), $uploader_path['upload_dir'].'/'.$version.'/'.$file['name'].'.mp4');
+
+						$file[$version]['name'] = $handle->file_dst_name_body;
+						$file[$version]['url'] = $uploader_path['upload_url'].'/'.$version.'/'.$file['name'].'.mp4';
+
+						$file[$version]['duration'] = $file['duration'];
+						$file[$version]['ratio'] = $file['ratio'];
+						$file[$version]['mime'] = mime_content_type($uploader_path['upload_dir'].'/'.$version.'/'.$file['name'].'.mp4');
+		    		}
+		    	}
 			}
 
 			if ($handle->processed) {
