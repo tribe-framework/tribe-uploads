@@ -189,6 +189,9 @@ class Uploads {
 		  }
 
 		  else {
+			$video_mime_types_allowed[] = 'video/mp4';
+			$video_mime_types_allowed[] = 'video/mov';
+			$video_mime_types_allowed[] = 'video/webm';
 
 			$handle->file_new_name_body = $file['name'];
 			$handle->process($uploader_path['upload_dir']);
@@ -213,42 +216,13 @@ class Uploads {
 				}
 			}
 
-			else if (in_array(strtolower($file_extension), ['mp4', 'mov', 'webm'])) {
+			else if (($_ENV['CLOUDFLARE_STREAM_TOKEN'] ?? false) &&  ($_ENV['CLOUDFLARE_STREAM_ACCOUNT'] ?? false) && in_array(mime_content_type($uploader_path['upload_dir'].'/'.$handle->file_dst_name), $video_mime_types_allowed)) {		
 
-				$file['duration'] = intval(exec('ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 '.$uploader_path['upload_dir'].'/'.$handle->file_dst_name));
-				$ratio = array_map("intval", explode('x', exec('ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 '.$uploader_path['upload_dir'].'/'.$handle->file_dst_name)));
-				$file['ratio'] = $ratio[0]/$ratio[1];
-
-				if ($file['duration'] <= ($_ENV['ALLOWED_MAX_VIDEO_DURATION_FOR_CONVERSION'] ?? 30)) {
-
-					foreach ($video_versions as $version => $constraints) {
-						$ffmpeg = \FFMpeg\FFMpeg::create([
-							'ffmpeg.binaries' => exec('which ffmpeg'),
-							'ffprobe.binaries' => exec('which ffprobe'),
-						]);
-						$video = $ffmpeg->open($uploader_path['upload_dir'].'/'.$handle->file_dst_name);
-
-						if ($file['ratio']>=1) {
-							$video
-						    ->filters()
-						    ->resize(new \FFMpeg\Coordinate\Dimension($constraints['max_width'], ceil($file['ratio']*$constraints['max_width'])), \FFMpeg\Filters\Video\ResizeFilter::RESIZEMODE_INSET, false);
-						} else {
-							$video
-						    ->filters()
-						    ->resize(new \FFMpeg\Coordinate\Dimension(ceil($file['ratio']*$constraints['max_height']), $constraints['max_height']), \FFMpeg\Filters\Video\ResizeFilter::RESIZEMODE_INSET, false);
-						}
-
-					    $video
-		    				->save(new \FFMpeg\Format\Video\X264(), $uploader_path['upload_dir'].'/'.$version.'/'.$file['name'].'.mp4');
-
-						$file[$version]['name'] = $handle->file_dst_name_body;
-						$file[$version]['url'] = $uploader_path['upload_url'].'/'.$version.'/'.$file['name'].'.mp4';
-
-						$file[$version]['duration'] = $file['duration'];
-						$file[$version]['ratio'] = $file['ratio'];
-						$file[$version]['mime'] = mime_content_type($uploader_path['upload_dir'].'/'.$version.'/'.$file['name'].'.mp4');
-		    		}
-		    	}
+				$output = null;
+				$retval = null;
+		    	exec('curl -X POST -F file=@'.$uploader_path['upload_dir'].'/'.$handle->file_dst_name.' -H "Authorization: Bearer '.$_ENV['CLOUDFLARE_STREAM_TOKEN'].'" https://api.cloudflare.com/client/v4/accounts/'.$_ENV['CLOUDFLARE_STREAM_ACCOUNT'].'/stream', $output, $retval);
+		    	
+		    	$file['cloudflare_stream'] = json_decode(implode(' ', $output), 1);
 			}
 
 			if ($handle->processed) {
