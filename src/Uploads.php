@@ -134,6 +134,43 @@ class Uploads {
 		}
 	}
 
+	public function handleFileSearch($query) {
+		$strings = array_map('trim', explode('##', urldecode($query)));
+        $filenames_op = [];
+        $filecontents_op = [];
+        $filenames_or = [];
+        $filecontents_or = [];
+        
+        $files = explode(PHP_EOL, shell_exec('grep -Ril "'.implode('\|', $strings).'" /var/www/html/'.$_ENV['WEB_BARE_URL'].'/uploads/'));
+
+        $filenames = explode(PHP_EOL, shell_exec("find /var/www/html/".$_ENV['WEB_BARE_URL']."/uploads -not -path '*/[@.]*' -type f"));
+
+        foreach ($strings as $string) {
+            $filenames_op = array_merge($filenames_op, preg_grep("/".$string."/i", $filenames));
+        }
+
+        foreach ($filenames_op as $file) {
+            $filenames_or[] = str_replace('/var/www/html/', 'https://', $file);
+        }
+
+        foreach ($files as $file) {
+            if ($file !== '')
+                $filecontents_op[] = $file;
+        }
+
+        foreach ($filecontents_op as $file) {
+            $filecontents_or[] = str_replace('/var/www/html/', 'https://', $file);
+        }
+
+        $filenames_or = array_unique($filenames_or);
+        $filenames_or = array_combine(array_map('basename', $filenames_or), $filenames_or);
+
+        $filecontents_or = array_unique($filecontents_or);
+        $filecontents_or = array_combine(array_map('basename', $filecontents_or), $filecontents_or);
+
+        return array('by_file_name'=>$filenames_or, 'by_file_content'=>$filecontents_or);
+	}
+
 	public function handleUpload(array $files_server_arr, array $post_server_arr = [], array $get_server_arr = []) {
 
 		if ($post_server_arr['url'] ?? false)
@@ -141,6 +178,10 @@ class Uploads {
 
 		else if ($files_server_arr['image'] ?? false)
 			$files_server_arr['file'] = $files_server_arr['image'];
+
+		//handle upload search
+		else if (($post_server_arr['search'] ?? false) && ($post_server_arr['q'] ?? false))
+			return $this->handleFileSearch($post_server_arr['q']);
 
 		$handle = new \Verot\Upload\Upload($files_server_arr['file']);
 
