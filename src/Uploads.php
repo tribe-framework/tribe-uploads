@@ -141,16 +141,18 @@ class Uploads {
         $filenames_or = [];
         $filecontents_or = [];
 
-        $files = explode(PHP_EOL, shell_exec('grep -Ril "'.implode('\|', $strings).'" /var/www/html/'.$_ENV['WEB_BARE_URL'].'/uploads/'));
+        $search_q = '^(?=.*'.implode(')(?=.*', $strings).')';
+
+        $files = explode(PHP_EOL, shell_exec('grep -PRil "'.$search_q.'" /var/www/html/'.$_ENV['WEB_BARE_URL'].'/uploads/'));
 
         if ($deep_search) {
-	        $files = array_merge($files, explode(PHP_EOL, shell_exec('timeout 7 pdfgrep -Ril "'.implode('\|', $strings).'" /var/www/html/'.$_ENV['WEB_BARE_URL'].'/uploads/')));
+	        $files = array_merge($files, explode(PHP_EOL, shell_exec('timeout 7 pdfgrep -PRil "'.$search_q.'" /var/www/html/'.$_ENV['WEB_BARE_URL'].'/uploads/')));
         }
 
         $filenames = explode(PHP_EOL, shell_exec("find /var/www/html/".$_ENV['WEB_BARE_URL']."/uploads -not -path '*/[@.]*' -type f"));
 
         foreach ($strings as $string) {
-            $filenames_op = array_merge($filenames_op, preg_grep("/".$string."/i", $filenames));
+            $filenames_op = array_merge($filenames_op, preg_grep("/".$search_q."/i", $filenames));
         }
 
         foreach ($filenames_op as $file) {
