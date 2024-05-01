@@ -134,14 +134,18 @@ class Uploads {
 		}
 	}
 
-	public function handleFileSearch($query) {
+	public function handleFileSearch($query, $deep_search = false) {
 		$strings = array_map('trim', explode('##', urldecode($query)));
         $filenames_op = [];
         $filecontents_op = [];
         $filenames_or = [];
         $filecontents_or = [];
-        
+
         $files = explode(PHP_EOL, shell_exec('grep -Ril "'.implode('\|', $strings).'" /var/www/html/'.$_ENV['WEB_BARE_URL'].'/uploads/'));
+
+        if ($deep_search) {
+	        $files = array_merge($files, explode(PHP_EOL, shell_exec('timeout 7 pdfgrep -Ril "'.implode('\|', $strings).'" /var/www/html/'.$_ENV['WEB_BARE_URL'].'/uploads/')));
+        }
 
         $filenames = explode(PHP_EOL, shell_exec("find /var/www/html/".$_ENV['WEB_BARE_URL']."/uploads -not -path '*/[@.]*' -type f"));
 
@@ -181,7 +185,7 @@ class Uploads {
 
 		//handle upload search
 		else if (($post_server_arr['search'] ?? false) && ($post_server_arr['q'] ?? false))
-			return $this->handleFileSearch($post_server_arr['q']);
+			return $this->handleFileSearch($post_server_arr['q'], ($post_server_arr['deep_search'] ?? false));
 
 		$handle = new \Verot\Upload\Upload($files_server_arr['file']);
 
