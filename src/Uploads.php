@@ -110,6 +110,41 @@ class Uploads {
 		return $file_arr;
 	}
 
+	public function deleteFileRecord($object) {
+		$junctions_root = $_ENV['JUNCTIONS_ROOT'] ?? '/var/www/html/';
+
+		if ($object['url'] ?? false) {
+			$pth = str_replace('https://', $junctions_root, $object['url']);
+			error_log($pth);
+			unlink($pth);
+		}
+
+		if ($object['file']['lg']['url'] ?? false) {
+			$pth = str_replace('https://', $junctions_root, $object['file']['lg']['url']);
+			unlink($pth);
+		}
+
+		if ($object['file']['md']['url'] ?? false) {
+			$pth = str_replace('https://', $junctions_root, $object['file']['md']['url']);
+			unlink($pth);
+		}
+
+		if ($object['file']['sm']['url'] ?? false) {
+			$pth = str_replace('https://', $junctions_root, $object['file']['sm']['url']);
+			unlink($pth);
+		}
+
+		if ($object['file']['xl']['url'] ?? false) {
+			$pth = str_replace('https://', $junctions_root, $object['file']['xl']['url']);
+			unlink($pth);
+		}
+
+		if ($object['file']['xs']['url'] ?? false) {
+			$pth = str_replace('https://', $junctions_root, $object['file']['xs']['url']);
+			unlink($pth);
+		}
+	}
+
 	public function getDirURL()
 	{
 		return str_replace(TRIBE_ROOT, BASE_URL, getcwd());
@@ -141,22 +176,24 @@ class Uploads {
         $filenames_or = [];
         $filecontents_or = [];
 
+        $junctions_root = $_ENV['JUNCTIONS_ROOT'] ?? '/var/www/html/';
+
         $search_q = '^(?=.*'.implode(')(?=.*', $strings).')';
 
-        $files = explode(PHP_EOL, shell_exec('grep -PRil "'.$search_q.'" /var/www/html/'.$_ENV['WEB_BARE_URL'].'/uploads/'));
+        $files = explode(PHP_EOL, shell_exec('grep -PRil "'.$search_q.'" '.$junctions_root.$_ENV['WEB_BARE_URL'].'/uploads/'));
 
         if ($deep_search) {
-	        $files = array_merge($files, explode(PHP_EOL, shell_exec('timeout 7 pdfgrep -PRil "'.$search_q.'" /var/www/html/'.$_ENV['WEB_BARE_URL'].'/uploads/')));
+	        $files = array_merge($files, explode(PHP_EOL, shell_exec('timeout 7 pdfgrep -PRil "'.$search_q.'" '.$junctions_root.$_ENV['WEB_BARE_URL'].'/uploads/')));
         }
 
-        $filenames = explode(PHP_EOL, shell_exec("find /var/www/html/".$_ENV['WEB_BARE_URL']."/uploads -not -path '*/[@.]*' -type f"));
+        $filenames = explode(PHP_EOL, shell_exec("find ".$junctions_root.$_ENV['WEB_BARE_URL']."/uploads -not -path '*/[@.]*' -type f"));
 
         foreach ($strings as $string) {
             $filenames_op = array_merge($filenames_op, preg_grep("/".$search_q."/i", $filenames));
         }
 
         foreach ($filenames_op as $file) {
-            $filenames_or[] = str_replace('/var/www/html/', 'https://', $file);
+            $filenames_or[] = str_replace($junctions_root, 'https://', $file);
         }
 
         foreach ($files as $file) {
@@ -165,7 +202,7 @@ class Uploads {
         }
 
         foreach ($filecontents_op as $file) {
-            $filecontents_or[] = str_replace('/var/www/html/', 'https://', $file);
+            $filecontents_or[] = str_replace($junctions_root, 'https://', $file);
         }
 
         $filenames_or = array_unique($filenames_or);
