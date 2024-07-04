@@ -111,36 +111,39 @@ class Uploads {
 	}
 
 	public function deleteFileRecord($object) {
-		$web_root = $_ENV['WEB_ROOT'] ?? '/var/www/html/';
+        if ($_ENV['DOCKER_ROOT'] ?? false)
+        	$web_root = $_ENV['DOCKER_ROOT'];
+        else
+	        $web_root = ($_ENV['WEB_ROOT'] ?? '/var/www/html/').$_ENV['WEB_BARE_URL'];
 
 		if ($object['url'] ?? false) {
-			$pth = str_replace('https://', $web_root, $object['url']);
+			$pth = str_replace($_ENV['WEB_URL'], $web_root, $object['url']);
 			error_log($pth);
 			unlink($pth);
 		}
 
 		if ($object['file']['lg']['url'] ?? false) {
-			$pth = str_replace('https://', $web_root, $object['file']['lg']['url']);
+			$pth = str_replace($_ENV['WEB_URL'], $web_root, $object['file']['lg']['url']);
 			unlink($pth);
 		}
 
 		if ($object['file']['md']['url'] ?? false) {
-			$pth = str_replace('https://', $web_root, $object['file']['md']['url']);
+			$pth = str_replace($_ENV['WEB_URL'], $web_root, $object['file']['md']['url']);
 			unlink($pth);
 		}
 
 		if ($object['file']['sm']['url'] ?? false) {
-			$pth = str_replace('https://', $web_root, $object['file']['sm']['url']);
+			$pth = str_replace($_ENV['WEB_URL'], $web_root, $object['file']['sm']['url']);
 			unlink($pth);
 		}
 
 		if ($object['file']['xl']['url'] ?? false) {
-			$pth = str_replace('https://', $web_root, $object['file']['xl']['url']);
+			$pth = str_replace($_ENV['WEB_URL'], $web_root, $object['file']['xl']['url']);
 			unlink($pth);
 		}
 
 		if ($object['file']['xs']['url'] ?? false) {
-			$pth = str_replace('https://', $web_root, $object['file']['xs']['url']);
+			$pth = str_replace($_ENV['WEB_URL'], $web_root, $object['file']['xs']['url']);
 			unlink($pth);
 		}
 	}
@@ -176,17 +179,20 @@ class Uploads {
         $filenames_or = [];
         $filecontents_or = [];
 
-        $web_root = $_ENV['WEB_ROOT'] ?? '/var/www/html/';
+        if ($_ENV['DOCKER_ROOT'] ?? false)
+        	$web_root = $_ENV['DOCKER_ROOT'];
+        else
+	        $web_root = ($_ENV['WEB_ROOT'] ?? '/var/www/html/').$_ENV['WEB_BARE_URL'];
 
         $search_q = '^(?=.*'.implode(')(?=.*', $strings).')';
 
-        $files = explode(PHP_EOL, shell_exec('grep -PRil "'.$search_q.'" '.$web_root.$_ENV['WEB_BARE_URL'].'/uploads/'));
+        $files = explode(PHP_EOL, shell_exec('grep -PRil "'.$search_q.'" '.$web_root.'/uploads/'));
 
         if ($deep_search) {
-	        $files = array_merge($files, explode(PHP_EOL, shell_exec('timeout 7 pdfgrep -PRil "'.$search_q.'" '.$web_root.$_ENV['WEB_BARE_URL'].'/uploads/')));
+	        $files = array_merge($files, explode(PHP_EOL, shell_exec('timeout 7 pdfgrep -PRil "'.$search_q.'" '.$web_root.'/uploads/')));
         }
 
-        $filenames = explode(PHP_EOL, shell_exec("find ".$web_root.$_ENV['WEB_BARE_URL']."/uploads -not -path '*/[@.]*' -type f"));
+        $filenames = explode(PHP_EOL, shell_exec("find ".$web_root."/uploads -not -path '*/[@.]*' -type f"));
 
         foreach ($strings as $string) {
             $filenames_op = array_merge($filenames_op, preg_grep("/".$search_q."/i", $filenames));
