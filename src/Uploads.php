@@ -118,7 +118,6 @@ class Uploads {
 
 		if ($object['url'] ?? false) {
 			$pth = str_replace($_ENV['WEB_URL'], $web_root, $object['url']);
-			error_log($pth);
 			unlink($pth);
 		}
 
