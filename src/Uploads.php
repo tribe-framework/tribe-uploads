@@ -280,6 +280,9 @@ class Uploads {
 		  else {
 			$video_mime_types_allowed[] = 'video/mp4';
 			$video_mime_types_allowed[] = 'video/mov';
+			$video_mime_types_allowed[] = 'video/ogg';
+			$video_mime_types_allowed[] = 'video/mpeg';
+			$video_mime_types_allowed[] = 'video/quicktime';
 			$video_mime_types_allowed[] = 'video/webm';
 
 			$handle->file_new_name_body = $file['name'];
