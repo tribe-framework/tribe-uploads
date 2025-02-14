@@ -114,7 +114,7 @@ class Uploads {
         if ($_ENV['DOCKER_ROOT'] ?? false)
         	$web_root = $_ENV['DOCKER_ROOT'];
         else
-	        $web_root = ($_ENV['WEB_ROOT'] ?? '/var/www/html/').$_ENV['WEB_BARE_URL'];
+	        $web_root = ($_ENV['WEB_ROOT'] ?? '/mnt/wildfire/').$_ENV['WEB_BARE_URL'];
 
 		if ($object['url'] ?? false) {
 			$pth = str_replace($_ENV['WEB_URL'], $web_root, $object['url']);
@@ -181,7 +181,7 @@ class Uploads {
         if ($_ENV['DOCKER_ROOT'] ?? false)
         	$web_root = $_ENV['DOCKER_ROOT'];
         else
-	        $web_root = ($_ENV['WEB_ROOT'] ?? '/var/www/html/').$_ENV['WEB_BARE_URL'];
+	        $web_root = ($_ENV['WEB_ROOT'] ?? '/mnt/wildfire/').$_ENV['WEB_BARE_URL'];
 
         $search_q = '^(?=.*'.implode(')(?=.*', $strings).')';
 
