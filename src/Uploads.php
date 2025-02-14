@@ -233,6 +233,36 @@ class Uploads {
 
 		$handle = new \Verot\Upload\Upload($files_server_arr['file']);
 
+		// Add additional allowed mime types
+		$handle->mime_types = array_merge($handle->mime_types, array(
+		    'svg'  => 'image/svg+xml',
+		    'vtt'  => 'text/vtt',
+		    'srt'  => 'application/x-subrip',
+		    'm4a'  => 'audio/mp4',
+		    'ogg'  => 'audio/ogg',
+		    'oga'  => 'audio/ogg',
+		    'webm' => 'video/webm',
+		    'json' => 'application/json'
+		));
+
+		// Add additional allowed mime types
+		$handle->allowed = array_merge($handle->allowed, array(
+		    'image/svg+xml',
+		    'text/vtt',
+		    'application/x-subrip',
+		    'audio/mp4',
+		    'audio/ogg',
+		    'video/webm',
+		    'application/json'
+		));
+
+		$video_mime_types_allowed[] = 'video/mp4';
+		$video_mime_types_allowed[] = 'video/mov';
+		$video_mime_types_allowed[] = 'video/ogg';
+		$video_mime_types_allowed[] = 'video/mpeg';
+		$video_mime_types_allowed[] = 'video/quicktime';
+		$video_mime_types_allowed[] = 'video/webm';
+
 		//Image size variants
 		$image_versions = [
 			'xl' => array(
@@ -257,7 +287,6 @@ class Uploads {
 			),
 		];
 
-
 		//Video size variants
 		$video_versions = [
 			'md' => array(
@@ -268,22 +297,10 @@ class Uploads {
 
 		if ($handle->uploaded) {
 		  
-		  $file = array();
-		  $uploader_path = $this->getUploaderPath();
-		  $file_extension = pathinfo($files_server_arr['file']['name'], PATHINFO_EXTENSION);
-		  $file['name'] = pathinfo($files_server_arr['file']['name'], PATHINFO_FILENAME).'_'.uniqid();
-
-		  if (!in_array(strtolower($file_extension), explode(',', $_ENV['ALLOWED_FILE_EXTENSIONS_IN_UPLOADS_FOLDER']))) {
-		  	return array('status'=>'error', 'error_message'=>'File format not supported by server.');
-		  }
-
-		  else {
-			$video_mime_types_allowed[] = 'video/mp4';
-			$video_mime_types_allowed[] = 'video/mov';
-			$video_mime_types_allowed[] = 'video/ogg';
-			$video_mime_types_allowed[] = 'video/mpeg';
-			$video_mime_types_allowed[] = 'video/quicktime';
-			$video_mime_types_allowed[] = 'video/webm';
+			$file = array();
+			$uploader_path = $this->getUploaderPath();
+			$file_extension = pathinfo($files_server_arr['file']['name'], PATHINFO_EXTENSION);
+			$file['name'] = pathinfo($files_server_arr['file']['name'], PATHINFO_FILENAME).'_'.uniqid();
 
 			$handle->file_new_name_body = $file['name'];
 			$handle->process($uploader_path['upload_dir']);
@@ -323,7 +340,6 @@ class Uploads {
 			} else {
 				return array('status'=>'error', 'success'=>0, 'error'=>1, 'error_message'=>$handle->error);
 			}
-		  }
 		}
 	}
 }
